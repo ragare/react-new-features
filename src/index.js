@@ -1,47 +1,60 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 import ReactDOM from 'react-dom';
 import * as serviceWorker from './serviceWorker';
 
+const notesReducer = (state, action) => {
+    switch (action.type) {
+        case 'POPULATE_NOTES':
+            return action.notes
+        case 'ADD_NOTE':
+            return [
+                ...state,
+                {
+                    title: action.title,
+                    body: action.body
+                }
+            ]
+        case 'REMOVE_NOTE':
+            return state.filter(note => note.title !== action.title)
+        default:
+            return state
+    }
+}
+
 const NoteApp = () => {
-    const notesData = JSON.parse(localStorage.getItem('notes'))
-    const [notes, setNotes] = useState(notesData || [])
+    // const [notes, setNotes] = useState([])
+    const [notes, dispatch] = useReducer(notesReducer, [])
     const [title, setTitle] = useState('')
     const [body, setBody] = useState('')
 
-
+    useEffect(() => {
+        const notes = JSON.parse(localStorage.getItem('notes'))
+        // setNotes(notesData || [])
+        if (notes) {
+            dispatch({ type: 'POPULATE_NOTES', notes })
+        }
+    }, [])
 
     useEffect(() => {
-        if (notes !== localNotes) {
-            localStorage.setItem('notes', JSON.stringify(notes))
-        }
-    })
+        localStorage.setItem('notes', JSON.stringify(notes))
+    }, [notes])
 
     const addNote = (e) => {
         e.preventDefault()
-        setNotes([
-            ...notes,
-            {
-                title,
-                body
-            }
-        ])
+        dispatch({ type: 'ADD_NOTE', title, body })
         setTitle('')
         setBody('')
     }
 
     const removeNote = (title) => {
-        setNotes(notes.filter(note => note.title !== title))
+        dispatch({ type: 'REMOVE_NOTE', title })
     }
 
     return (
         <div>
             <h1>Notes</h1>
             {notes.map((note) => (
-                <div key={note.title}>
-                    <h3>{note.title}</h3>
-                    <p>{note.body}</p>
-                    <button onClick={() => removeNote(note.title)}>X</button>
-                </div>
+                <Note key={note.title} note={note} removeNote={removeNote} />
             ))}
             <p>Add note</p>
             <form onSubmit={addNote}>
@@ -54,16 +67,35 @@ const NoteApp = () => {
     )
 }
 
+const Note = ({ note, removeNote }) => {
+    useEffect(() => {
+        console.log('Setting up use effect!"')
+        return () => {
+            console.log('Cleaning up effect!')
+        }
+    }, [])
 
+    return (
+        <div>
+            <h3>{note.title}</h3>
+            <p>{note.body}</p>
+            <button onClick={() => removeNote(note.title)}>X</button>
+        </div>
+    )
+}
 
 const App = (props) => {
     const [count, setCount] = useState(props.count)
     const [text, setText] = useState('')
 
     useEffect(() => {
+        console.log('Only once')
+    }, [])
+
+    useEffect(() => {
         console.log('Use effect ran')
         document.title = count
-    })
+    }, [count])
 
     return (
         <div>
